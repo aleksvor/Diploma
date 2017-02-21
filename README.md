@@ -1,1 +1,1 @@
-# DiplomaClassifier
+# Diploma
