@@ -30,21 +30,23 @@ for k in range(1,101):
 best = result.idxmin()
 print(best)
 print(result[best])
-'''
-neigh = KNeighborsClassifier(n_neighbors = best, weights = 'distance')
+
+neigh = KNeighborsClassifier(n_neighbors=best, weights='distance')
 neigh.fit(x, y)
 
-data = pandas.read_table('D:\Microsoft Malware Classification Challenge\objectMatrixTest.txt', sep=',', header = None)
+data = pd.read_table('objectMatrixTest.txt', sep=',', header=None)
 
-xt = data[list(range(1, 11))]
+xt = data[list(range(1, 19))]
 
-xt = pandas.DataFrame(scale(xt))
+print(xt)
+
+xt = pd.DataFrame(scale(xt))
 
 yt = neigh.predict_proba(xt)
 
 lab = data[0]
 
-with open("D:/Microsoft Malware Classification Challenge/Submission.csv", "w") as f:
+with open("SubmissionKNC.csv", "w") as f:
     f.write('Id,Prediction1,Prediction2,Prediction3,Prediction4,Prediction5,Prediction6,Prediction7,Prediction8,Prediction9\n')
     for i in range(0, yt.shape[0]):
         f.write(lab[i])
@@ -54,4 +56,3 @@ with open("D:/Microsoft Malware Classification Challenge/Submission.csv", "w") a
             f.write(",")
         f.write(str(yt[i][8]))
         f.write("\n")
-'''
