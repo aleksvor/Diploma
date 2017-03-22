@@ -156,7 +156,14 @@ int main(int argc, char* argv[])
 
     //вывод в файл
     std::ofstream fOutput;
-    fOutput.open("objectMatrix.txt", std::ios::out);
+    if(std::string(argv[1]) == "train")
+    {
+        fOutput.open("objectMatrix.txt", std::ios::out);
+    }
+    else
+    {
+        fOutput.open("objectMatrixTest.txt", std::ios::out);
+    }
     if(!fOutput)
     {
         std::cerr << "Can't open output file" << std::endl;
