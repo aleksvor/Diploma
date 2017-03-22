@@ -7,35 +7,57 @@
 #include <regex>
 #include <stdlib.h>
 
-int main()
+int main(int argc, char* argv[])
 {
+    std::string dir = "";
+    if(argc < 2)
+    {
+        std::cerr << "Too few parameters" << std::endl;
+        return -1;
+    }
+    else
+    {
+        if(std::string(argv[1]) == "train")
+        {
+            dir = "train";
+        }
+        else if(std::string(argv[1]) == "test")
+        {
+            dir = "test";
+        }
+        else
+        {
+            std::cerr << "Unexpected parameter." << std::endl;
+            return -1;
+        }
+    }
     std::vector<std::vector<int> > objectMatrix;
     std::vector<std::string> names;
 
     //извлечение меток классов из файла
-    std::ifstream fLabels;
-    fLabels.open("trainLabels.txt", std::ios::in);
-    if(!fLabels)
-    {
-        std::cout << "Can't open trainLabels.txt";
-        return -1;
-    }
     std::map<std::string, int> labels;
-    for (int i = 0; i < 10868; ++i)
+    if(std::string(argv[1]) == "train")
     {
-        std::string str;
-        int num;
-        fLabels >> str >> num;
-        std::pair<std::string, int> p(str, num);
-        labels.insert(p);
+        std::ifstream fLabels;
+        fLabels.open("trainLabels.txt", std::ios::in);
+        if(!fLabels)
+        {
+            std::cerr << "Can't open trainLabels.txt" << std::endl;
+            return -1;
+        }
+        std::string tempStr = "";
+        int tempNum;
+        while(fLabels >> tempStr >> tempNum)
+        {
+            labels.insert(std::pair<std::string, int>(tempStr, tempNum));
+        }
+        fLabels.close();
     }
-    fLabels.close();
 
     //подготовка итератора
-    std::string dir = "train";
     if(!boost::filesystem::exists(dir) || !boost::filesystem::is_directory(dir))
     {
-        std::cout << "Wrong dir";
+        std::cerr << "Wrong dir" << std::endl;
         return -1;
     }
 
@@ -62,7 +84,7 @@ int main()
         fAsm.open(dirContents[i].path().string());
         if(!fAsm)
         {
-            std::cout << "Can't open " + dirContents[i].path().string();
+            std::cerr << "Can't open " + dirContents[i].path().string() << std::endl;
             continue;
         }
 
@@ -90,7 +112,7 @@ int main()
         fBytes.open(nameBytes);
         if(!fBytes)
         {
-            std::cout << "Can't open " + nameBytes;
+            std::cerr << "Can't open " + nameBytes << std::endl;
             continue;
         }
 
@@ -120,13 +142,16 @@ int main()
         fBytes.close();
 
         //только для обучающей выборки: записать в конец вектора метку класса
-        std::string objectName = nameBytes;
-        objectName.erase(objectName.end() - 6, objectName.end());
-        objectName.erase(objectName.begin(), objectName.begin() + 6);
-        objectFeatures.push_back(labels[objectName]);
+        if(std::string(argv[1]) == "train")
+        {
+            std::string objectName = nameBytes;
+            objectName.erase(objectName.end() - 6, objectName.end());
+            objectName.erase(objectName.begin(), objectName.begin() + 6);
+            objectFeatures.push_back(labels[objectName]);
+        }
 
         objectMatrix.push_back(objectFeatures);
-        std::cout << std::to_string(i + 1) + " entries processed.\n";
+        std::cout << std::to_string(i + 1) + " entries processed." << std::endl;
     }
 
     //вывод в файл
@@ -134,12 +159,15 @@ int main()
     fOutput.open("objectMatrix.txt", std::ios::out);
     if(!fOutput)
     {
-        std::cout << "Can't open output file";
+        std::cerr << "Can't open output file" << std::endl;
         return -1;
     }
     for (unsigned i = 0; i < objectMatrix.size(); ++i)
     {
-        //fOutput << names[i] << ",";
+        if(std::string(argv[1]) == "test")
+        {
+            fOutput << names[i] << ",";
+        }
         for (unsigned j = 0; j < objectMatrix[i].size(); ++j)
             fOutput << objectMatrix[i][j] << ",";
         fOutput << std::endl;
