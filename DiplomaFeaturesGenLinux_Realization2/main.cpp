@@ -6,6 +6,71 @@
 #include <fstream>
 #include <regex>
 #include <stdlib.h>
+#include <thread>
+
+void countAsm(std::string name, std::vector<int> &vec)
+{
+    std::ifstream fAsm;
+    fAsm.open(name);
+    if(!fAsm)
+    {
+        std::cerr << "Can't open " + name << std::endl;
+        return;
+    }
+
+    std::string str = "";
+    while(fAsm >> str)
+    {
+        if (str == "mov") ++vec[0];
+        if (str == "add") ++vec[1];
+        if (str == "cmp") ++vec[2];
+        if (str == "jmp") ++vec[3];
+        if (str == "inc") ++vec[4];
+        if (str == "neg") ++vec[5];
+        if (str == "mul") ++vec[6];
+        if (str == "imul") ++vec[7];
+        if (str == "div") ++vec[8];
+        if (str == "idiv") ++vec[9];
+    }
+    fAsm.close();
+}
+
+void countBytes(std::string name, std::vector<int> &vec)
+{
+    std::ifstream fBytes;
+    fBytes.open(name);
+    if(!fBytes)
+    {
+        std::cerr << "Can't open " + name << std::endl;
+        return;
+    }
+
+    std::string str = "";
+    while (fBytes >> str)
+    {
+        if (str == "00")
+            ++vec[10];
+        if (str == "FF")
+            ++vec[11];
+        if (str == "??")
+            ++vec[12];
+        if (str == "01")
+            ++vec[13];
+        if (str == "10")
+            ++vec[14];
+        if(str == "CC")
+            ++vec[15];
+        if(str == "C0")
+            ++vec[16];
+        if (str == "A8")
+            ++vec[15];
+        if (str == "0C")
+            ++vec[16];
+        if (str == "11")
+            ++vec[17];
+    }
+    fBytes.close();
+}
 
 int main(int argc, char* argv[])
 {
@@ -79,67 +144,16 @@ int main(int argc, char* argv[])
         std::vector<int> objectFeatures(18, 0);
 
         //открыть файлы и прочесть их содержимое
-        //TODO: распараллелить чтение из двух файлов
-        std::ifstream fAsm;
-        fAsm.open(dirContents[i].path().string());
-        if(!fAsm)
-        {
-            std::cerr << "Can't open " + dirContents[i].path().string() << std::endl;
-            continue;
-        }
-
-        std::string str = "";
-        while(fAsm >> str)
-        {
-            if (str == "mov") ++objectFeatures[0];
-            if (str == "add") ++objectFeatures[1];
-            if (str == "cmp") ++objectFeatures[2];
-            if (str == "jmp") ++objectFeatures[3];
-            if (str == "inc") ++objectFeatures[4];
-            if (str == "neg") ++objectFeatures[5];
-            if (str == "mul") ++objectFeatures[6];
-            if (str == "imul") ++objectFeatures[7];
-            if (str == "div") ++objectFeatures[8];
-            if (str == "idiv") ++objectFeatures[9];
-        }
-        fAsm.close();
-
+        std::string nameAsm = dirContents[i].path().string();
         std::string nameBytes = dirContents[i].path().string();
         nameBytes.erase(nameBytes.end() - 4, nameBytes.end());
         nameBytes += ".bytes";
 
-        std::ifstream fBytes;
-        fBytes.open(nameBytes);
-        if(!fBytes)
-        {
-            std::cerr << "Can't open " + nameBytes << std::endl;
-            continue;
-        }
+        std::thread thrAsm(countAsm, nameAsm, std::ref(objectFeatures));
+        std::thread thrBytes(countBytes, nameBytes, std::ref(objectFeatures));
 
-        while (fBytes >> str)
-        {
-            if (str == "00")
-                ++objectFeatures[10];
-            if (str == "FF")
-                ++objectFeatures[11];
-            if (str == "??")
-                ++objectFeatures[12];
-            if (str == "01")
-                ++objectFeatures[13];
-            if (str == "10")
-                ++objectFeatures[14];
-            if(str == "CC")
-                ++objectFeatures[15];
-            if(str == "C0")
-                ++objectFeatures[16];
-            if (str == "A8")
-                ++objectFeatures[15];
-            if (str == "0C")
-                ++objectFeatures[16];
-            if (str == "11")
-                ++objectFeatures[17];
-        }
-        fBytes.close();
+        thrAsm.join();
+        thrBytes.join();
 
         //только для обучающей выборки: записать в конец вектора метку класса
         if(std::string(argv[1]) == "train")
