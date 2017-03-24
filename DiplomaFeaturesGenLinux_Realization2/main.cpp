@@ -58,10 +58,6 @@ void countBytes(std::string name, std::vector<int> &vec)
             ++vec[13];
         if (str == "10")
             ++vec[14];
-        if(str == "CC")
-            ++vec[15];
-        if(str == "C0")
-            ++vec[16];
         if (str == "A8")
             ++vec[15];
         if (str == "0C")
@@ -70,6 +66,42 @@ void countBytes(std::string name, std::vector<int> &vec)
             ++vec[17];
     }
     fBytes.close();
+}
+
+void processObject(std::string mode, std::string nameAsm, std::map<std::string, int> labels, unsigned i, std::vector<std::vector<int> > &objectMatrix)
+{
+    if(i >= objectMatrix.size())
+    {
+        return;
+    }
+
+    std::vector<int> objectFeatures(18, 0);
+
+    std::string nameBytes = nameAsm;
+    nameBytes.erase(nameBytes.end() - 4, nameBytes.end());
+    nameBytes += ".bytes";
+
+    std::thread thrAsm(countAsm, nameAsm, std::ref(objectFeatures));
+    std::thread thrBytes(countBytes, nameBytes, std::ref(objectFeatures));
+
+    thrAsm.join();
+    thrBytes.join();
+
+    //только для обучающей выборки: записать в конец вектора метку класса
+    if(mode == "train")
+    {
+        std::string objectName = nameBytes;
+        objectName.erase(objectName.end() - 6, objectName.end());
+        objectName.erase(objectName.begin(), objectName.begin() + 6);
+        objectFeatures.push_back(labels[objectName]);
+    }
+
+    objectMatrix[i] = objectFeatures;
+}
+
+void emptyFunc()
+{
+    return;
 }
 
 int main(int argc, char* argv[])
@@ -96,8 +128,6 @@ int main(int argc, char* argv[])
             return -1;
         }
     }
-    std::vector<std::vector<int> > objectMatrix;
-    std::vector<std::string> names;
 
     //извлечение меток классов из файла
     std::map<std::string, int> labels;
@@ -138,34 +168,37 @@ int main(int argc, char* argv[])
         dirContents.push_back(*i);
     }
 
-    //обработка
-    for(unsigned i = 0; i < dirContents.size(); ++i)
+    int blockSize = std::thread::hardware_concurrency();
+    std::vector<std::vector<int> > objectMatrix(dirContents.size());
+
+    //новая обработка
+    int count = 0;
+    for(unsigned i = 0; i < dirContents.size(); i += blockSize)
     {
-        std::vector<int> objectFeatures(18, 0);
-
-        //открыть файлы и прочесть их содержимое
-        std::string nameAsm = dirContents[i].path().string();
-        std::string nameBytes = dirContents[i].path().string();
-        nameBytes.erase(nameBytes.end() - 4, nameBytes.end());
-        nameBytes += ".bytes";
-
-        std::thread thrAsm(countAsm, nameAsm, std::ref(objectFeatures));
-        std::thread thrBytes(countBytes, nameBytes, std::ref(objectFeatures));
-
-        thrAsm.join();
-        thrBytes.join();
-
-        //только для обучающей выборки: записать в конец вектора метку класса
-        if(std::string(argv[1]) == "train")
+        std::vector<std::thread> threads(blockSize);
+        for(unsigned j = 0; j < threads.size(); ++j)
         {
-            std::string objectName = nameBytes;
-            objectName.erase(objectName.end() - 6, objectName.end());
-            objectName.erase(objectName.begin(), objectName.begin() + 6);
-            objectFeatures.push_back(labels[objectName]);
-        }
+            if(i + j < dirContents.size())
+            {
+                threads[j] = std::thread(processObject,
+                                         std::string(argv[1]),
+                                         dirContents[i + j].path().string(),
+                                         labels,
+                                         i + j,
+                                         std::ref(objectMatrix));
+            }
+            else
+            {
+                threads[j] = std::thread(emptyFunc);
+            }
 
-        objectMatrix.push_back(objectFeatures);
-        std::cout << std::to_string(i + 1) + " entries processed." << std::endl;
+        }
+        for(unsigned j = 0; j < threads.size(); ++j)
+        {
+            threads[j].join();
+        }
+        count += blockSize;
+        std::cout << count << " entries processed." << std::endl;
     }
 
     //вывод в файл
@@ -187,7 +220,10 @@ int main(int argc, char* argv[])
     {
         if(std::string(argv[1]) == "test")
         {
-            fOutput << names[i] << ",";
+            std::string name = dirContents[i].path().string();
+            name.erase(name.end() - 4, name.end());
+            name.erase(name.begin(), name.begin() + 5);
+            fOutput << name << ",";
         }
         for (unsigned j = 0; j < objectMatrix[i].size(); ++j)
             fOutput << objectMatrix[i][j] << ",";
