@@ -2,11 +2,14 @@
 #include <map>
 #include <string>
 #include <vector>
-#include <boost/filesystem.hpp>
 #include <fstream>
 #include <regex>
 #include <stdlib.h>
 #include <thread>
+
+#include <boost/filesystem.hpp>
+
+using namespace boost::filesystem;
 
 void countAsm(std::string name, std::vector<int> &vec)
 {
@@ -150,18 +153,18 @@ int main(int argc, char* argv[])
     }
 
     //подготовка итератора
-    if(!boost::filesystem::exists(dir) || !boost::filesystem::is_directory(dir))
+    if(!exists(dir) || !is_directory(dir))
     {
         std::cerr << "Wrong dir" << std::endl;
         return -1;
     }
 
     //поиск файлов с расширением .asm и занесение их дескрипторов в вектор
-    std::vector<boost::filesystem::directory_entry> dirContents;
+    std::vector<directory_entry> dirContents;
     std::regex filter(".*asm");
-    boost::filesystem::directory_iterator end;
+    directory_iterator end;
 
-    for(boost::filesystem::directory_iterator i(dir); i!=end; ++i)
+    for(directory_iterator i(dir); i!=end; ++i)
     {
         std::smatch what;
         if(!std::regex_match(i->path().string(), what, filter)) continue;
