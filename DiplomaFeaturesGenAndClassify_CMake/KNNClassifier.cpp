@@ -3,13 +3,13 @@
 #include <stdexcept>
 #include <cmath>
 #include <algorithm>
+#include <iostream>
 
 KNNClassifier::KNNClassifier(const std::vector<std::vector<int> > aMatrix, const int ak)
 {
     if(aMatrix.size() <= 0)
     {
         throw std::length_error("Matrix is empty!");
-        return;
     }
     
     trainObjects = aMatrix;
@@ -19,16 +19,27 @@ KNNClassifier::KNNClassifier(const std::vector<std::vector<int> > aMatrix, const
 
 std::vector<double> KNNClassifier::predict(const std::vector<int> testObject)
 {
-    std::vector<double> predictions(trainObjects[0].size() - 1, 0); //-1 - т.к. последний элемент - метка класса
+    std::vector<double> predictions(9, 0);
     
     //посчитаем расстояния до каждого объекта выборки
     std::vector<pair<int, double> > ranges(trainObjects.size());
     for(int i = 0; i < ranges.size(); ++i)
     {
-        pair<int, double> temp(
-            trainObjects[i][trainObjects[i].size() - 1],
-            calculateRange(testObject, trainObjects[i]));
-        ranges[i] = temp;
+        try
+        {
+            //создаём tempVec, чтобы убрать из него метку класса
+            std::vector<int> tempVec = trainObjects[i];
+            tempVec.pop_back();
+            
+            pair<int, double> temp(
+                trainObjects[i][trainObjects[i].size() - 1],
+                calculateRange(testObject, tempVec));
+            ranges[i] = temp;
+        }
+        catch(std::length_error)
+        {
+            throw std::length_error("Vectors have different sizes!");
+        }
     }
     
     //отсортируем объекты по расстоянию
@@ -37,10 +48,10 @@ std::vector<double> KNNClassifier::predict(const std::vector<int> testObject)
     });
     
     //выкидываем элементы, не входящие в k ближайших соседей
-    ranges.erase(ranges.begin(), ranges.end() - k);
+    ranges.erase(ranges.begin() + k, ranges.end());
     
     //посчитаем количество элементов каждого класса
-    std::vector<int> objectsAmount(trainObjects[0].size() - 1, 0);
+    std::vector<int> objectsAmount(9, 0);
     
     for(int i = 0; i < ranges.size(); ++i)
     {
@@ -50,7 +61,7 @@ std::vector<double> KNNClassifier::predict(const std::vector<int> testObject)
     //посчитаем вероятности принадлежности каждому классу
     for(int i = 0; i < objectsAmount.size(); ++i)
     {
-        predictions[i] = objectsAmount[i] / objectsAmount.size();
+        predictions[i] = (double)objectsAmount[i] / k;
     }
     
     return predictions;
@@ -60,8 +71,8 @@ double KNNClassifier::calculateRange(const vector<int> vec1, const vector<int> v
 {
     if(vec1.size() != vec2.size())
     {
+        std::cerr << vec1.size() << " " << vec2.size() << std::endl;
         throw std::length_error("Vectors have different sizes!");
-        return -1;
     }
     
     double res = 0;
