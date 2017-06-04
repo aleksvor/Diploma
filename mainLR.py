@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from sklearn import model_selection
 from sklearn.preprocessing import scale
 from sklearn.linear_model import LogisticRegression
@@ -15,14 +16,22 @@ x = pd.DataFrame(scale(x))
 # кросс-валидация и поиск наилучшего k
 kf = model_selection.KFold(n_splits=5, shuffle=True, random_state=42)
 
-c = 1500.0
+resc = pd.Series([])
+resScore = pd.Series([])
 
-lr = LogisticRegression(penalty='l2', C=c, solver='newton-cg', multi_class='multinomial', n_jobs=-1)
+for c in range(1000, 2001):
 
-scores = model_selection.cross_val_score(lr, x, y, cv=kf, scoring='neg_log_loss')
+    lr = LogisticRegression(penalty='l2', C=c, solver='newton-cg', multi_class='multinomial', n_jobs=-1)
 
-print(np.mean(scores))
-print(c)
+    scores = model_selection.cross_val_score(lr, x, y, cv=kf, scoring='neg_log_loss')
+
+    resc[c-999] = c
+    resScore[c-999] = np.mean(scores)
+
+
+plt.plot(resc, resScore)
+plt.savefig('plot.png', format='png')
+plt.show()
 
 lr.fit(x, y)
 

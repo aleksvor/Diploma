@@ -21,6 +21,8 @@ private:
     
     vector<vector<int> > trainObjects;
     
+    double weight(const double range);
+    
     int k;
 };
 #endif

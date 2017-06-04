@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <iomanip>
 
 #include <boost/tokenizer.hpp>
 
@@ -101,9 +102,9 @@ int main()
         outputFile << testNames[i] << ",";
         for (int j = 0; j < predictions[i].size() - 1; ++j)
         {
-            outputFile << predictions[i][j] << ",";
+            outputFile /**<< fixed << setprecision(6)*/ << predictions[i][j] << ",";
         }
-        outputFile << predictions[i][predictions[i].size() - 1] << std::endl;
+        outputFile /**<< fixed << setprecision(6)*/ << predictions[i][predictions[i].size() - 1] << std::endl;
     }
     
     outputFile.close();

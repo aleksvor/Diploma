@@ -5,3 +5,7 @@
 */Release/
 */exe/
 */.kdev4/
+objectMatrix*.txt
+.idea
+Submission*.csv
+*.png

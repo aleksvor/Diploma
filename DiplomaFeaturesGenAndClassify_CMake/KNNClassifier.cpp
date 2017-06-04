@@ -17,6 +17,11 @@ KNNClassifier::KNNClassifier(const std::vector<std::vector<int> > aMatrix, const
     k = ak;
 }
 
+double KNNClassifier::weight(const double range)
+{
+    return (1 / range);
+}
+
 std::vector<double> KNNClassifier::predict(const std::vector<int> testObject)
 {
     std::vector<double> predictions(9, 0);
@@ -50,18 +55,14 @@ std::vector<double> KNNClassifier::predict(const std::vector<int> testObject)
     //выкидываем элементы, не входящие в k ближайших соседей
     ranges.erase(ranges.begin() + k, ranges.end());
     
-    //посчитаем количество элементов каждого класса
-    std::vector<int> objectsAmount(9, 0);
-    
-    for(int i = 0; i < ranges.size(); ++i)
+    //вычислим ответы для каждого класса
+    for(int i = 0; i < predictions.size(); ++i)
     {
-        ++objectsAmount[ranges[i].first];
-    }
-    
-    //посчитаем вероятности принадлежности каждому классу
-    for(int i = 0; i < objectsAmount.size(); ++i)
-    {
-        predictions[i] = (double)objectsAmount[i] / k;
+        predictions[i] = 0;
+        for(int j = 0; j < ranges.size(); ++j)
+        {
+            predictions[i] += (ranges[j].first == i + 1) * weight(ranges[j].second);
+        }
     }
     
     return predictions;
