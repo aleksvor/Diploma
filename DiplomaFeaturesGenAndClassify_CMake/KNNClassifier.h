@@ -17,12 +17,15 @@ public:
     
 private:
     
-    double calculateRange(const vector<int> vec1, const vector<int> vec2);
-    
-    vector<vector<int> > trainObjects;
+    double calculateRange(const vector<double> vec1, const vector<double> vec2);
     
     double weight(const double range);
     
+    void normalize(vector<double>& vec);
+    
     int k;
+    
+    vector<vector<double> > trainObjects;
+    vector<int> classLabels;
 };
 #endif

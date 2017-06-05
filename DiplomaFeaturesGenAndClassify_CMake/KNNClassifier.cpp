@@ -12,7 +12,22 @@ KNNClassifier::KNNClassifier(const std::vector<std::vector<int> > aMatrix, const
         throw std::length_error("Matrix is empty!");
     }
     
-    trainObjects = aMatrix;
+    trainObjects.resize(aMatrix.size());
+    classLabels.resize(aMatrix.size());
+    
+    for(int i = 0; i < aMatrix.size(); ++i)
+    {
+        trainObjects[i].resize(aMatrix[i].size() - 1);
+        
+        for(int j = 0; j < aMatrix[i].size() - 1; ++j)
+        {
+            trainObjects[i][j] = (double)aMatrix[i][j];
+        }
+        
+        normalize(trainObjects[i]);
+        
+        classLabels[i] = aMatrix[i][aMatrix[i].size() - 1];
+    }
     
     k = ak;
 }
@@ -26,19 +41,23 @@ std::vector<double> KNNClassifier::predict(const std::vector<int> testObject)
 {
     std::vector<double> predictions(9, 0);
     
+    std::vector<double> tempVec(testObject.size());
+    for(int i = 0; i < testObject.size(); ++i)
+    {
+        tempVec[i] = testObject[i];
+    }
+    
+    normalize(tempVec);
+    
     //посчитаем расстояния до каждого объекта выборки
     std::vector<pair<int, double> > ranges(trainObjects.size());
     for(int i = 0; i < ranges.size(); ++i)
     {
         try
         {
-            //создаём tempVec, чтобы убрать из него метку класса
-            std::vector<int> tempVec = trainObjects[i];
-            tempVec.pop_back();
-            
             pair<int, double> temp(
-                trainObjects[i][trainObjects[i].size() - 1],
-                calculateRange(testObject, tempVec));
+                classLabels[i],
+                calculateRange(tempVec, trainObjects[i]));
             ranges[i] = temp;
         }
         catch(std::length_error)
@@ -65,10 +84,12 @@ std::vector<double> KNNClassifier::predict(const std::vector<int> testObject)
         }
     }
     
+    normalize(predictions);
+    
     return predictions;
 }
 
-double KNNClassifier::calculateRange(const vector<int> vec1, const vector<int> vec2)
+double KNNClassifier::calculateRange(const vector<double> vec1, const vector<double> vec2)
 {
     if(vec1.size() != vec2.size())
     {
@@ -80,8 +101,31 @@ double KNNClassifier::calculateRange(const vector<int> vec1, const vector<int> v
     
     for(int i = 0; i < vec1.size(); ++i)
     {
-        res += std::pow((vec1[i] - vec2[i]), 2);
+        res += (vec1[i] - vec2[i]) * (vec1[i] - vec2[i]);
     }
     
     return std::sqrt(res);
+}
+
+void KNNClassifier::normalize(vector<double>& vec)
+{
+    double min = vec[0];
+    double max = vec[0];
+    
+    for(int i = 1; i < vec.size(); ++i)
+    {
+        if(vec[i] > max)
+        {
+            max = vec[i];
+        }
+        if(vec[i] < min)
+        {
+            min = vec[i];
+        }
+    }
+    
+    for(int i = 0; i < vec.size(); ++i)
+    {
+        vec[i] = (vec[i] - min) / (max - min);
+    }
 }
