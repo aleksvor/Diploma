@@ -14,7 +14,7 @@ if(Boost_FOUND AND Threads_FOUND)
   add_executable(featuresgen mainGenerator.cpp)
   target_link_libraries(featuresgen ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
   
-  add_executable(classificator mainClassificator.cpp KNNClassifier.cpp)
+  add_executable(classificator mainClassificator.cpp ClassificationAlgorithm.cpp KNNClassifier.cpp)
 endif()
 
 install(TARGETS featuresgen classificator DESTINATION bin)

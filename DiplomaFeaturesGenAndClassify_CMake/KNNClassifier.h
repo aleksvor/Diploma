@@ -21,8 +21,6 @@ private:
     
     double weight(const double range);
     
-    void normalize(vector<double>& vec);
-    
     int k;
     
     vector<vector<double> > trainObjects;
