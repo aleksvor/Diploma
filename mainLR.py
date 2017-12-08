@@ -13,7 +13,7 @@ x = data[list(range(0, 18))]
 
 x = pd.DataFrame(scale(x))
 
-# кросс-валидация и поиск наилучшего k
+# кросс-валидация
 kf = model_selection.KFold(n_splits=5, shuffle=True, random_state=42)
 
 resc = pd.Series([])

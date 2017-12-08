@@ -12,10 +12,10 @@ x = data[list(range(0, 18))]
 
 x = pd.DataFrame(scale(x))
 
-# кросс-валидация и поиск наилучшего k
+# кросс-валидация
 kf = model_selection.KFold(n_splits=5, shuffle=True, random_state=42)
 
-dt = DecisionTreeClassifier()
+dt = DecisionTreeClassifier(criterion="entropy", random_state=42)
 
 scores = model_selection.cross_val_score(dt, x, y, cv=kf, scoring="neg_log_loss")
 print(np.mean(scores))

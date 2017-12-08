@@ -13,7 +13,7 @@ if(Boost_FOUND AND Threads_FOUND)
   include_directories(${Boost_INCLUDE_DIRS})
   add_executable(featuresgen mainGenerator.cpp)
   target_link_libraries(featuresgen ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
-  
+
   add_executable(classificator mainClassificator.cpp ClassificationAlgorithm.cpp KNNClassifier.cpp)
 endif()
 
